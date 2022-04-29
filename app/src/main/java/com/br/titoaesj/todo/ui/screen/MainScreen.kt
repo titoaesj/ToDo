@@ -1,5 +1,6 @@
 package com.br.titoaesj.todo.ui.screen
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -8,18 +9,31 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Card
 import androidx.compose.material.Checkbox
+import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.RadioButton
+import androidx.compose.material.RadioButtonDefaults
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -30,9 +44,13 @@ import androidx.constraintlayout.compose.ConstraintSet
 import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavHostController
 import com.br.titoaesj.todo.R
+import com.br.titoaesj.todo.data.ConstTestTAG
 import com.br.titoaesj.todo.data.Task
 import com.br.titoaesj.todo.navigation.Screen
+import com.br.titoaesj.todo.ui.theme.BlueGray900
 import com.br.titoaesj.todo.ui.theme.Shapes
+import com.br.titoaesj.todo.ui.theme.ToDoTheme
+import timber.log.Timber
 
 /**
  * Projeto ToDo
@@ -40,55 +58,142 @@ import com.br.titoaesj.todo.ui.theme.Shapes
  * Criado em 25 de março de 2022.
  */
 
-
 @Composable
 fun MainScreen(
     viewModel: TaskViewModel,
     navigation: NavHostController
 ) {
+
     MainContent(
         taskList = viewModel.tasks,
-        addNewTaskSegue = {
+        addNewTaskOnClick = {
             navigation.navigate(Screen.AddNewTaskcreen.router)
         },
         updateTaskStatus = { task ->
             task.isDone = !task.isDone
             viewModel.updateTask(task = task)
+        },
+        removeTasks = { tasks ->
+            Timber.tag("MainScreen").d(tasks.toString())
         }
     )
 }
 
 @Composable
 fun MainContent(
+    isContextualMenu : Boolean = false,
     taskList: List<Task>,
-    addNewTaskSegue: () -> Unit,
-    updateTaskStatus: (Task) -> Unit
+    addNewTaskOnClick: () -> Unit,
+    updateTaskStatus: (Task) -> Unit,
+    removeTasks: (List<Task>) -> Unit
 ) {
+
+    var isContextualMenuState by remember { mutableStateOf(isContextualMenu) }
+    val selectedItensForRemoveState = remember { mutableStateListOf<Task>() }
+
+
+    val backgroundColor = if (isContextualMenuState) {
+        Color.Unspecified
+    } else {
+        Color.Unspecified
+    }
+    val contentColor = if (isContextualMenuState) {
+        Color.Unspecified
+    } else {
+        Color.Unspecified
+    }
+
     Scaffold(
-        topBar = { TopAppBar(title = { Text(text = stringResource(id = R.string.app_name)) }) },
-        floatingActionButton = { AddTaskFab(onClick = addNewTaskSegue) }
+        topBar = {
+            TopAppBar(
+                title = {
+                    if (isContextualMenuState && selectedItensForRemoveState.size > 0)
+                        Text(
+                            text = "(${selectedItensForRemoveState.size}) selecionado",
+                            modifier = Modifier.testTag(ConstTestTAG.MainScreen.TopAppBarTitleTAG)
+                        )
+                    else
+                        Text(
+                            text = stringResource(id = R.string.app_name),
+                            modifier = Modifier.testTag(ConstTestTAG.MainScreen.TopAppBarTitleTAG)
+                        )
+                },
+                navigationIcon =
+                if (isContextualMenuState)
+                    ({
+                        IconButton(
+                            onClick =  {
+                                isContextualMenuState = false
+                                selectedItensForRemoveState.clear()
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Voltar"
+                            )
+                        }
+                    })
+                else
+                    null,
+                actions = {
+                    if (isContextualMenuState && selectedItensForRemoveState.size > 0)
+                        IconButton(onClick = {
+                            removeTasks(selectedItensForRemoveState.toList())
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete"
+                            )
+                        }
+
+                },
+                elevation = 0.dp,
+                backgroundColor = MaterialTheme.colors.primary
+            )
+        },
+        floatingActionButton = {
+            if (isContextualMenuState.not())
+                AddTaskFab(onClick = addNewTaskOnClick)
+        },
+        modifier = Modifier.testTag(ConstTestTAG.MainScreen.TopAppBarTAG)
     ) {
-        ListTaskContent(taskList = taskList, updateTaskStatus = updateTaskStatus)
+        ListTaskContent(
+            isMenuContextual = isContextualMenuState,
+            taskList = taskList,
+            selectedItensForRemove = selectedItensForRemoveState,
+            checkboxUpdateTaskStatus = updateTaskStatus,
+            updateMenuContextualOnClick = {  isContextualMenuState = true }
+        )
     }
 }
 
 @Composable
 fun AddTaskFab(onClick: () -> Unit) {
     FloatingActionButton(shape = Shapes.small, onClick = onClick) {
-        Icon(imageVector = Icons.Filled.Add, contentDescription = "adicionar tarefa")
+        Icon(
+            imageVector = Icons.Filled.Add,
+            tint = MaterialTheme.colors.onSurface,
+            contentDescription = "adicionar tarefa"
+        )
     }
 }
 
 @Composable
-fun TaskItemCard(task: Task, updateTaskStatus: (Task) -> Unit) {
+fun TaskItemCard(
+    isMenuContextual: Boolean,
+    task: Task,
+    radioButtonIsSelect: Boolean,
+    checkBosUpdateTaskStatus: (Task) -> Unit,
+    radioButtonUpdateTaskStatus: (Task) -> Unit,
+    itemContextualMenuOnClick: () -> Unit
+) {
 
     val checkedState = remember { mutableStateOf(task.isDone) }
 
     val constraints = ConstraintSet {
 
         val descriptionConst = createRefFor("description")
-        val checkboxConst = createRefFor("checkbox")
-
+        val markerConst = createRefFor("marker")
         val guidelineH = createGuidelineFromAbsoluteRight(0.1f)
 
         constrain(descriptionConst) {
@@ -100,7 +205,7 @@ fun TaskItemCard(task: Task, updateTaskStatus: (Task) -> Unit) {
             height = Dimension.wrapContent
         }
 
-        constrain(checkboxConst) {
+        constrain(markerConst) {
             top.linkTo(descriptionConst.top)
             bottom.linkTo(descriptionConst.bottom)
             start.linkTo(guidelineH)
@@ -116,6 +221,7 @@ fun TaskItemCard(task: Task, updateTaskStatus: (Task) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+            .clickable { itemContextualMenuOnClick() }
     ) {
 
         ConstraintLayout(
@@ -124,45 +230,82 @@ fun TaskItemCard(task: Task, updateTaskStatus: (Task) -> Unit) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-
             Text(
                 text = task.description,
                 textAlign = TextAlign.Start,
-                textDecoration = if (task.isDone) TextDecoration.LineThrough else TextDecoration.None,
+                textDecoration =
+                if
+                        (task.isDone) TextDecoration.LineThrough
+                else
+                    TextDecoration.None,
                 modifier = Modifier.layoutId("description")
             )
-
-            Checkbox(
-                checked = checkedState.value,
-                onCheckedChange = {
-                    updateTaskStatus(task)
-                    checkedState.value = task.isDone
-                },
-                modifier = Modifier.layoutId("checkbox")
-            )
-
+            if (isMenuContextual)
+                RadioButton(
+                    selected = radioButtonIsSelect,
+                    onClick = {
+                        radioButtonUpdateTaskStatus(task)
+                    },
+                    colors = RadioButtonDefaults.colors(
+                        selectedColor = BlueGray900
+                    ),
+                    modifier = Modifier.layoutId("marker")
+                )
+            else
+                Checkbox(
+                    checked = checkedState.value,
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = BlueGray900
+                    ),
+                    onCheckedChange = {
+                        checkBosUpdateTaskStatus(task)
+                        checkedState.value = task.isDone
+                    },
+                    modifier = Modifier.layoutId("marker")
+                )
         }
-
-
     }
 }
 
 @Composable
-fun ListTaskContent(taskList: List<Task>, updateTaskStatus: (Task) -> Unit) {
+fun ListTaskContent(
+    isMenuContextual: Boolean,
+    taskList: List<Task>,
+    selectedItensForRemove: SnapshotStateList<Task>,
+    checkboxUpdateTaskStatus: (Task) -> Unit,
+    updateMenuContextualOnClick: () -> Unit
+) {
 
-    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(ConstTestTAG.MainScreen.ListTaskContentTAG)
+    ) {
         item {
             Spacer(modifier = Modifier.height(16.dp))
         }
         items(taskList) { task ->
-            TaskItemCard(task = task, updateTaskStatus = updateTaskStatus)
+            TaskItemCard(
+                isMenuContextual = isMenuContextual,
+                task = task,
+                radioButtonIsSelect = selectedItensForRemove.contains(task),
+                checkBosUpdateTaskStatus = checkboxUpdateTaskStatus,
+                itemContextualMenuOnClick = updateMenuContextualOnClick,
+                radioButtonUpdateTaskStatus = {
+                    if (selectedItensForRemove.contains(task)) {
+                        selectedItensForRemove.remove(it)
+                    } else {
+                        selectedItensForRemove.add(it)
+                    }
+                }
+            )
         }
     }
 }
 
 @Preview
 @Composable
-fun MainScreenPreview() {
+fun MainScreenLightPreview() {
 
     val tasks: List<Task> = listOf(
         Task(description = "Lavar as roupas", isDone = true),
@@ -171,9 +314,37 @@ fun MainScreenPreview() {
         Task(description = "Consulta dentista 01/01/2022 às 15h:30m")
     )
 
-    MainContent(
-        taskList = tasks,
-        addNewTaskSegue = { },
-        updateTaskStatus = { }
+    ToDoTheme(darkTheme = false) {
+        MainContent(
+            isContextualMenu = true,
+            taskList = tasks,
+            addNewTaskOnClick = { },
+            updateTaskStatus = { },
+            removeTasks = {tasks -> }
+        )
+    }
+
+}
+
+@Preview
+@Composable
+fun MainScreenDarkPreview() {
+
+    val tasks: List<Task> = listOf(
+        Task(description = "Lavar as roupas", isDone = true),
+        Task(description = "Limpar a casa", isDone = true),
+        Task(description = "Passar na feira comprar Banana, Laranja, Manga e Maracujá"),
+        Task(description = "Consulta dentista 01/01/2022 às 15h:30m")
     )
+
+    ToDoTheme(darkTheme = true) {
+        MainContent(
+            isContextualMenu = false,
+            taskList = tasks,
+            addNewTaskOnClick = { },
+            updateTaskStatus = { },
+            removeTasks = {tasks -> }
+        )
+    }
+
 }
