@@ -38,6 +38,10 @@ class TaskViewModel @Inject constructor(private val taskRepository: TaskReposito
         taskRepository.updateTask(task = task)
     }
 
+    fun removeTasks(tasks: List<Task>) {
+        taskRepository.removeTasks(tasks = tasks)
+    }
+
 
     init {
         reload()

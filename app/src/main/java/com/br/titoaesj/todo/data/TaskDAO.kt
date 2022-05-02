@@ -1,6 +1,7 @@
 package com.br.titoaesj.todo.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -23,5 +24,8 @@ interface TaskDAO {
 
     @Update
     fun update(vararg tasks : Task) : Int
+
+    @Delete
+    fun remove(tasks : List<Task>) : Int
 
 }

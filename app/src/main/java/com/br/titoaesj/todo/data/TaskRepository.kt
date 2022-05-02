@@ -16,4 +16,6 @@ class TaskRepository @Inject constructor (private val taskDAO: TaskDAO) {
 
     fun updateTask(task : Task) : Int = taskDAO.update(task)
 
+    fun removeTasks(tasks : List<Task>) : Int = taskDAO.remove(tasks)
+
 }

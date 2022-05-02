@@ -31,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -50,7 +49,6 @@ import com.br.titoaesj.todo.navigation.Screen
 import com.br.titoaesj.todo.ui.theme.BlueGray900
 import com.br.titoaesj.todo.ui.theme.Shapes
 import com.br.titoaesj.todo.ui.theme.ToDoTheme
-import timber.log.Timber
 
 /**
  * Projeto ToDo
@@ -64,52 +62,63 @@ fun MainScreen(
     navigation: NavHostController
 ) {
 
+    var isContextualMenuMutableState by remember { mutableStateOf(false) }
+    val itemsForRemoveMutableState = remember { mutableStateListOf<Task>() }
+
     MainContent(
+        isContextualMenu = isContextualMenuMutableState,
+        itemsForRemoveSize = itemsForRemoveMutableState.size,
         taskList = viewModel.tasks,
-        addNewTaskOnClick = {
+        addNewTaskOnAction = {
             navigation.navigate(Screen.AddNewTaskcreen.router)
         },
-        updateTaskStatus = { task ->
+        updateTaskStatusOnAction = { task ->
             task.isDone = !task.isDone
             viewModel.updateTask(task = task)
         },
-        removeTasks = { tasks ->
-            Timber.tag("MainScreen").d(tasks.toString())
+        removeTasksOnAction = {
+            viewModel.removeTasks(tasks = itemsForRemoveMutableState.toList())
+
+        },
+        updateContextualMenuOnAction = { newContextualMenuState ->
+            isContextualMenuMutableState = newContextualMenuState
+        },
+        clearContextualMenuOnAction = {
+            itemsForRemoveMutableState.clear()
+        },
+        addNewItemForRmoveOnAction = { newTask ->
+            if (itemsForRemoveMutableState.contains(newTask)) {
+                itemsForRemoveMutableState.remove(newTask)
+            } else {
+                itemsForRemoveMutableState.add(newTask)
+            }
+        },
+        itemForRemoveIsCheck = { task ->
+            itemsForRemoveMutableState.contains(task)
         }
     )
 }
 
 @Composable
 fun MainContent(
-    isContextualMenu : Boolean = false,
+    isContextualMenu : Boolean,
+    itemsForRemoveSize : Int = 0,
     taskList: List<Task>,
-    addNewTaskOnClick: () -> Unit,
-    updateTaskStatus: (Task) -> Unit,
-    removeTasks: (List<Task>) -> Unit
+    addNewTaskOnAction: () -> Unit,
+    updateTaskStatusOnAction: (Task) -> Unit,
+    removeTasksOnAction: () -> Unit,
+    updateContextualMenuOnAction : (Boolean) -> Unit,
+    clearContextualMenuOnAction : () -> Unit,
+    addNewItemForRmoveOnAction : (Task) -> Unit,
+    itemForRemoveIsCheck : (Task) -> Boolean
 ) {
-
-    var isContextualMenuState by remember { mutableStateOf(isContextualMenu) }
-    val selectedItensForRemoveState = remember { mutableStateListOf<Task>() }
-
-
-    val backgroundColor = if (isContextualMenuState) {
-        Color.Unspecified
-    } else {
-        Color.Unspecified
-    }
-    val contentColor = if (isContextualMenuState) {
-        Color.Unspecified
-    } else {
-        Color.Unspecified
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    if (isContextualMenuState && selectedItensForRemoveState.size > 0)
+                    if (isContextualMenu && itemsForRemoveSize > 0)
                         Text(
-                            text = "(${selectedItensForRemoveState.size}) selecionado",
+                            text = "(${itemsForRemoveSize}) selecionado",
                             modifier = Modifier.testTag(ConstTestTAG.MainScreen.TopAppBarTitleTAG)
                         )
                     else
@@ -119,12 +128,12 @@ fun MainContent(
                         )
                 },
                 navigationIcon =
-                if (isContextualMenuState)
+                if (isContextualMenu)
                     ({
                         IconButton(
                             onClick =  {
-                                isContextualMenuState = false
-                                selectedItensForRemoveState.clear()
+                                updateContextualMenuOnAction(false)
+                                clearContextualMenuOnAction()
                             },
                         ) {
                             Icon(
@@ -136,9 +145,11 @@ fun MainContent(
                 else
                     null,
                 actions = {
-                    if (isContextualMenuState && selectedItensForRemoveState.size > 0)
+                    if (isContextualMenu && itemsForRemoveSize > 0)
                         IconButton(onClick = {
-                            removeTasks(selectedItensForRemoveState.toList())
+                            removeTasksOnAction()
+                            clearContextualMenuOnAction()
+                            updateContextualMenuOnAction(false)
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
@@ -152,18 +163,52 @@ fun MainContent(
             )
         },
         floatingActionButton = {
-            if (isContextualMenuState.not())
-                AddTaskFab(onClick = addNewTaskOnClick)
+            if (isContextualMenu.not())
+                AddTaskFab(onClick = addNewTaskOnAction)
         },
         modifier = Modifier.testTag(ConstTestTAG.MainScreen.TopAppBarTAG)
     ) {
         ListTaskContent(
-            isMenuContextual = isContextualMenuState,
+            isMenuContextual = isContextualMenu,
             taskList = taskList,
-            selectedItensForRemove = selectedItensForRemoveState,
-            checkboxUpdateTaskStatus = updateTaskStatus,
-            updateMenuContextualOnClick = {  isContextualMenuState = true }
+            checkboxUpdateTaskStatus = updateTaskStatusOnAction,
+            updateMenuContextualOnClick = {  updateContextualMenuOnAction(true) },
+            addNewItemForRmoveOnAction = addNewItemForRmoveOnAction,
+            itemForRemoveIsCheck = itemForRemoveIsCheck
         )
+    }
+}
+
+@Composable
+fun ListTaskContent(
+    isMenuContextual: Boolean,
+    taskList: List<Task>,
+    checkboxUpdateTaskStatus: (Task) -> Unit,
+    updateMenuContextualOnClick: () -> Unit,
+    addNewItemForRmoveOnAction : (Task) -> Unit,
+    itemForRemoveIsCheck : (Task) -> Boolean
+) {
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(ConstTestTAG.MainScreen.ListTaskContentTAG)
+    ) {
+        item {
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+        items(taskList) { task ->
+            TaskItemCard(
+                isMenuContextual = isMenuContextual,
+                task = task,
+                radioButtonIsSelect = itemForRemoveIsCheck(task),
+                checkBosUpdateTaskStatus = checkboxUpdateTaskStatus,
+                itemContextualMenuOnClick = updateMenuContextualOnClick,
+                radioButtonUpdateTaskStatus = {
+                    addNewItemForRmoveOnAction(task)
+                }
+            )
+        }
     }
 }
 
@@ -267,42 +312,6 @@ fun TaskItemCard(
     }
 }
 
-@Composable
-fun ListTaskContent(
-    isMenuContextual: Boolean,
-    taskList: List<Task>,
-    selectedItensForRemove: SnapshotStateList<Task>,
-    checkboxUpdateTaskStatus: (Task) -> Unit,
-    updateMenuContextualOnClick: () -> Unit
-) {
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag(ConstTestTAG.MainScreen.ListTaskContentTAG)
-    ) {
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        items(taskList) { task ->
-            TaskItemCard(
-                isMenuContextual = isMenuContextual,
-                task = task,
-                radioButtonIsSelect = selectedItensForRemove.contains(task),
-                checkBosUpdateTaskStatus = checkboxUpdateTaskStatus,
-                itemContextualMenuOnClick = updateMenuContextualOnClick,
-                radioButtonUpdateTaskStatus = {
-                    if (selectedItensForRemove.contains(task)) {
-                        selectedItensForRemove.remove(it)
-                    } else {
-                        selectedItensForRemove.add(it)
-                    }
-                }
-            )
-        }
-    }
-}
-
 @Preview
 @Composable
 fun MainScreenLightPreview() {
@@ -317,10 +326,15 @@ fun MainScreenLightPreview() {
     ToDoTheme(darkTheme = false) {
         MainContent(
             isContextualMenu = true,
+            itemsForRemoveSize = 0,
             taskList = tasks,
-            addNewTaskOnClick = { },
-            updateTaskStatus = { },
-            removeTasks = {tasks -> }
+            addNewTaskOnAction = {},
+            updateTaskStatusOnAction = { task -> },
+            removeTasksOnAction = {},
+            updateContextualMenuOnAction = { newContextualMenuState -> },
+            clearContextualMenuOnAction = {},
+            addNewItemForRmoveOnAction = { newTask -> },
+            itemForRemoveIsCheck = { task -> false}
         )
     }
 
@@ -340,10 +354,15 @@ fun MainScreenDarkPreview() {
     ToDoTheme(darkTheme = true) {
         MainContent(
             isContextualMenu = false,
+            itemsForRemoveSize = 0,
             taskList = tasks,
-            addNewTaskOnClick = { },
-            updateTaskStatus = { },
-            removeTasks = {tasks -> }
+            addNewTaskOnAction = {},
+            updateTaskStatusOnAction = { task -> },
+            removeTasksOnAction = {},
+            updateContextualMenuOnAction = { newContextualMenuState -> },
+            clearContextualMenuOnAction = {},
+            addNewItemForRmoveOnAction = { newTask -> },
+            itemForRemoveIsCheck = { task -> false}
         )
     }
 

@@ -45,8 +45,8 @@ class MainScreenTest {
                 isMenuContextual = false,
                 enterMenuContextualOnClick = {},
                 exitMenuContextualOnClick = {},
-                addNewTaskOnClick = {},
-                updateTaskStatus = { }
+                addNewTaskOnAction = {},
+                updateTaskStatusOnAction = { }
             )
         }
     }
