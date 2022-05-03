@@ -18,7 +18,9 @@ in this project the following technologies were used
 
 ## :camera_flash: Screenshots
 <!-- You can add more screenshots here if you like -->
+<div align="center">
 <img src="https://github.com/titoaesj/ToDo/blob/master/readme/light.gif" width="260">&emsp;<img src="https://github.com/titoaesj/ToDo/blob/master/readme/dark.gif" width="260">
+</div>
 
 ## License
 ```
