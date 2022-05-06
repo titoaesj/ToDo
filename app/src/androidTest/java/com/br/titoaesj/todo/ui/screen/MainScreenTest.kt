@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsToggleable
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -34,19 +35,23 @@ class MainScreenTest {
         Task(description = "Lavar as roupas", isDone = true),
         Task(description = "Limpar a casa", isDone = true),
         Task(description = "Passar na feira comprar Banana, Laranja, Manga e Maracujá"),
-        Task(description = "Consulta dentista 01/01/2022 às 15h:30m")
+        Task(description = "Consulta dentista 01/01/2022 às 15h:30m", isDone = false)
     )
 
     @Before
     fun setUp() {
         composeTesteRule.setContent {
             MainContent(
+                isContextualMenu = false,
+                itemsForRemoveSize = 0,
                 taskList = mockTasks,
-                isMenuContextual = false,
-                enterMenuContextualOnClick = {},
-                exitMenuContextualOnClick = {},
                 addNewTaskOnAction = {},
-                updateTaskStatusOnAction = { }
+                updateTaskStatusOnAction = { task -> },
+                removeTasksOnAction = {},
+                updateContextualMenuOnAction = { newContextualMenuState -> },
+                clearContextualMenuOnAction = {},
+                addNewItemForRmoveOnAction = { newTask -> },
+                itemForRemoveIsCheck = { task -> false}
             )
         }
     }
@@ -65,10 +70,17 @@ class MainScreenTest {
     @Test
     fun whenFirstTaskItemCardIsMarked() {
         composeTesteRule.onNodeWithText(mockTasks.first().description)
-            .onParent()
             .onChildren()
             .onLast()
             .assertIsOn()
+    }
+
+    @Test
+    fun whenLastTaskItemCardIsUnmarked() {
+        composeTesteRule.onNodeWithText(mockTasks.last().description)
+            .onChildren()
+            .onLast()
+            .assertIsOff()
     }
 
     @Test
@@ -79,16 +91,7 @@ class MainScreenTest {
     }
 
     @Test
-    fun whenLastTaskItemCardIsUnmarked() {
-        composeTesteRule.onNodeWithText(mockTasks.last().description)
-            .onParent()
-            .onChildren()
-            .onLast()
-            .assertIsOff()
-    }
-
-    @Test
     fun whenAddTaskButtonExists() {
-        composeTesteRule.onNodeWithContentDescription("adicionar tarefa").assertIsDisplayed()
+        composeTesteRule.onNodeWithContentDescription("Adicionar tarefa").assertIsDisplayed()
     }
 }

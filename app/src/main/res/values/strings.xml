@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">ToDo</string>
     <string name="form_task_label">Nova atividade...</string>
+    <string name="count_for_remove_selected">(%1$d) selecionado</string>
+    <string name="back_label">Voltar</string>
+    <string name="delete_label">Delete</string>
+    <string name="add_task_label">Adicionar tarefa</string>
+    <string name="add_label">Adicionar</string>
 </resources>

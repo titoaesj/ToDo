@@ -31,7 +31,7 @@ internal class AddNewTaskScreenRobot(val composeContentTestRule: ComposeContentT
         addButtonField
             .assertIsDisplayed()
             .assertTextEquals("Adicionar")
-            .assertContentDescriptionEquals("Adiciona atividade")
+            .assertContentDescriptionEquals("Adicionar tarefa")
             .assertIsEnabled()
 
     fun inputNewTaskFieldlInititalState(): SemanticsNodeInteraction =

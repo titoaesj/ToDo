@@ -59,7 +59,7 @@ import kotlinx.coroutines.delay
  */
 
 @Composable
-fun AddNewTaskScreen(viewModel: TaskViewModel, navigation : NavHostController) {
+fun AddNewTaskScreen(viewModel: TaskViewModel, navigation: NavHostController) {
 
     AddNewTaskContent(
         onClickAddTask = { task ->
@@ -90,7 +90,7 @@ fun AddNewTaskContent(
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Voltar"
+                            contentDescription = stringResource(id = R.string.back_label)
                         )
                     }
                 },
@@ -168,11 +168,14 @@ fun FromContent(onClickAddTask: (Task) -> Unit) {
         ) {
             Icon(
                 Icons.Filled.Add,
-                contentDescription = "Adiciona atividade",
-                tint =  MaterialTheme.colors.onSurface,
+                contentDescription = stringResource(id = R.string.add_task_label),
+                tint = MaterialTheme.colors.onSurface,
                 modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
             )
-            Text(text = "Adicionar", color =  MaterialTheme.colors.onSurface,)
+            Text(
+                text = stringResource(id = R.string.add_label),
+                color = MaterialTheme.colors.onSurface
+            )
         }
     }
 }

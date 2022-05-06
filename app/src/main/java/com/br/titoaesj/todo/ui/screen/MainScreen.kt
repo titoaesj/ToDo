@@ -118,7 +118,7 @@ fun MainContent(
                 title = {
                     if (isContextualMenu && itemsForRemoveSize > 0)
                         Text(
-                            text = "(${itemsForRemoveSize}) selecionado",
+                            text = stringResource(id = R.string.count_for_remove_selected, itemsForRemoveSize),
                             modifier = Modifier.testTag(ConstTestTAG.MainScreen.TopAppBarTitleTAG)
                         )
                     else
@@ -138,7 +138,7 @@ fun MainContent(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Voltar"
+                                contentDescription = stringResource(id = R.string.back_label)
                             )
                         }
                     })
@@ -153,7 +153,7 @@ fun MainContent(
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete"
+                                contentDescription = stringResource(id = R.string.delete_label)
                             )
                         }
 
@@ -218,7 +218,7 @@ fun AddTaskFab(onClick: () -> Unit) {
         Icon(
             imageVector = Icons.Filled.Add,
             tint = MaterialTheme.colors.onSurface,
-            contentDescription = "adicionar tarefa"
+            contentDescription = stringResource(id = R.string.add_task_label)
         )
     }
 }
