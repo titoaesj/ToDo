@@ -1,14 +1,7 @@
 package com.br.titoaesj.todo.robot
 
-import androidx.compose.ui.test.SemanticsNodeInteraction
-import androidx.compose.ui.test.assertContentDescriptionEquals
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertTextContains
-import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.ComposeTestRule
-import androidx.compose.ui.test.onNodeWithTag
 import com.br.titoaesj.todo.data.ConstTestTAG
 
 /**
@@ -16,29 +9,92 @@ import com.br.titoaesj.todo.data.ConstTestTAG
  * Desenvolvido por Tito Albino Evangelista da Silva Junior
  * Criado em 30 de março de 2022.
  */
-internal class AddNewTaskScreenRobot(val composeContentTestRule: ComposeContentTestRule) {
+object AddNewTaskScreenRobot {
 
-    val addButtonField by lazy { composeContentTestRule.onNodeWithTag(ConstTestTAG.AddNewTaskScreen.AddButtonTAG) }
-    val inputNewTaskField by lazy { composeContentTestRule.onNodeWithTag(ConstTestTAG.AddNewTaskScreen.TextFieldNewTaskTAG) }
+    private lateinit var composeContentTestRule: ComposeContentTestRule
+    private lateinit var addButtonField: SemanticsNodeInteraction
+    private lateinit var inputNewTaskField: SemanticsNodeInteraction
 
-    fun inputNewTask(note: String): SemanticsNodeInteraction =
-        composeContentTestRule.insertTextIntoView(
-            viewTAG = ConstTestTAG.AddNewTaskScreen.TextFieldNewTaskTAG,
-            text = note
-        )
+    private const val noteDummy: String = "Olá mundo"
 
-    fun addButtonFiedlInititalState(): SemanticsNodeInteraction =
-        addButtonField
-            .assertIsDisplayed()
-            .assertTextEquals("Adicionar")
-            .assertContentDescriptionEquals("Adicionar tarefa")
-            .assertIsEnabled()
+    /**
+     * Config
+     */
+    fun setup(composeContentTestRule: ComposeContentTestRule) {
+        this.composeContentTestRule = composeContentTestRule
+    }
 
-    fun inputNewTaskFieldlInititalState(): SemanticsNodeInteraction =
-        inputNewTaskField
-            .assertIsDisplayed()
-            .assertTextContains("Nova atividade...")
-            .assertIsEnabled()
+    /**
+     * Arrange function to prepare the test.
+     *
+     * @param func The [AddNewTaskScreenArrange] instance to apply all options requested
+     *
+     */
+    infix fun arrange(func: AddNewTaskScreenArrange.() -> Unit) =
+        AddNewTaskScreenArrange().apply(func)
+
+    /**
+     * Act function to prepare the test.
+     *
+     * @param func The [AddNewTaskScreenAct] instance to apply all options requested
+     *
+     */
+    infix fun act(func: AddNewTaskScreenAct.() -> Unit) = AddNewTaskScreenAct().apply(func)
+
+    /**
+     * Assert function to prepare the test.
+     *
+     * @param func The [AddNewTaskScreenAssert] instance to perform all assertions requested
+     *
+     */
+    infix fun assert(func: AddNewTaskScreenAssert.() -> Unit) =
+        AddNewTaskScreenAssert().apply(func)
+
+    class AddNewTaskScreenArrange {
+        fun addButtonFieldArrange() {
+            addButtonField =
+                composeContentTestRule.onNodeWithTag(ConstTestTAG.AddNewTaskScreen.AddButtonTAG)
+        }
+
+        fun inputNewTaskFieldArrange() {
+            inputNewTaskField =
+                composeContentTestRule.onNodeWithTag(ConstTestTAG.AddNewTaskScreen.TextFieldNewTaskTAG)
+        }
+    }
+
+    class AddNewTaskScreenAct {
+
+        fun addButtonFieldInitStateAct() {
+            composeContentTestRule.insertTextIntoView(
+                viewTAG = ConstTestTAG.AddNewTaskScreen.TextFieldNewTaskTAG,
+                text = noteDummy
+            )
+        }
+    }
+
+    class AddNewTaskScreenAssert {
+        fun addButtonFieldInitStateAssert() {
+            addButtonField
+                .assertIsDisplayed()
+                .assertTextEquals("Adicionar")
+                .assertContentDescriptionEquals("Adicionar tarefa")
+                .assertIsEnabled()
+        }
+
+        fun inputNewTaskFieldAssert() {
+            inputNewTaskField
+                .assertIsDisplayed()
+                .assertTextContains("Nova atividade...")
+                .assertIsEnabled()
+        }
+
+        fun inputNewTaskFieldNewNoteAssert() {
+            inputNewTaskField
+                .assertIsDisplayed()
+                .assertTextContains(noteDummy)
+                .assertIsEnabled()
+        }
+    }
 
 
 }

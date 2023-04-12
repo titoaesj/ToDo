@@ -1,6 +1,5 @@
 package com.br.titoaesj.todo.ui.screen
 
-import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.br.titoaesj.todo.robot.AddNewTaskScreenRobot
@@ -18,8 +17,6 @@ class AddNewTaskScreenTest {
     @get:Rule
     val composeTesteRule: ComposeContentTestRule = createComposeRule()
 
-    private var addNewTaskRobot: AddNewTaskScreenRobot? = null
-
     @Before
     fun setUp() {
         composeTesteRule.setContent {
@@ -29,22 +26,46 @@ class AddNewTaskScreenTest {
             )
         }
 
-        addNewTaskRobot = AddNewTaskScreenRobot(composeContentTestRule = composeTesteRule)
+        AddNewTaskScreenRobot.setup(composeTesteRule)
 
     }
 
     @Test
     fun inputNewTaskInitialState() {
-        addNewTaskRobot?.inputNewTaskFieldlInititalState()
+        AddNewTaskScreenRobot.apply {
+            arrange {
+                inputNewTaskFieldArrange()
+            }
+            assert {
+                inputNewTaskFieldAssert()
+            }
+        }
     }
 
     @Test
     fun addButonInitialState() {
-        addNewTaskRobot?.addButtonFiedlInititalState()
+        AddNewTaskScreenRobot.apply {
+            arrange {
+                addButtonFieldArrange()
+            }
+            assert {
+                addButtonFieldInitStateAssert()
+            }
+        }
     }
 
     @Test
     fun inputNewTask() {
-        addNewTaskRobot?.inputNewTask("Olá mundo")?.assertTextEquals("Olá mundo")
+        AddNewTaskScreenRobot.apply {
+            arrange {
+                inputNewTaskFieldArrange()
+            }
+            act {
+                addButtonFieldInitStateAct()
+            }
+            assert {
+                inputNewTaskFieldNewNoteAssert()
+            }
+        }
     }
 }
